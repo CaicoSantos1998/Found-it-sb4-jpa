@@ -2,10 +2,14 @@ package com.github.CaicoSantos1998.Found.It.services;
 
 import com.github.CaicoSantos1998.Found.It.entities.User;
 import com.github.CaicoSantos1998.Found.It.repositories.UserRepository;
+import com.github.CaicoSantos1998.Found.It.resources.exceptions.DatabaseException;
 import com.github.CaicoSantos1998.Found.It.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +32,18 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
+        if(!repository.existsById(id)) {
+            throw new ResourceNotFoundException(id);
+        }
+
+        try {
+            repository.deleteById(id);
+            repository.flush();
+        } catch (EmptyResultDataAccessException e) {
+            throw new ResourceNotFoundException(id);
+        } catch (DataIntegrityViolationException e) {
+            throw new DatabaseException(e.getMessage());
+        }
         repository.deleteById(id);
     }
 
